@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do Agent — Workflow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+      padding: 56px 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .sub {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 52px;
+    }
+
+    /* single column spine */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── box ── */
+    .box {
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .box-head {
+      padding: 14px 22px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .box-body {
+      padding: 20px 22px;
+    }
+
+    /* ── arrow ── */
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 44px;
+      justify-content: center;
+      gap: 0;
+    }
+    .connector-line  { width: 2px; flex: 1; background: #cbd5e1; }
+    .connector-arrow {
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 10px solid #cbd5e1;
+    }
+
+    /* ── source chips ── */
+    .sources-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .chip {
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .chip-icon { font-size: 20px; }
+    .chip-name { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .chip-desc { font-size: 13px; color: #64748b; line-height: 1.4; }
+
+    .chip-jira   { background: #eff6ff; }
+    .chip-slack  { background: #fdf4ff; }
+    .chip-gmail  { background: #fff1f2; }
+    .chip-drive  { background: #f0fdf4; }
+
+    /* ── step list ── */
+    .steps { display: flex; flex-direction: column; gap: 10px; }
+    .step  {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .step-num {
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      background: #3b82f6;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text { font-size: 15px; color: #334155; line-height: 1.5; }
+    .step-text strong { color: #0f172a; }
+
+    /* ── key-value rows ── */
+    .kv-list { display: flex; flex-direction: column; gap: 8px; }
+    .kv {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .kv-key {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #7c3aed;
+      background: #f5f3ff;
+      padding: 2px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .kv-val { color: #475569; }
+
+    /* ── api rows ── */
+    .api-list { display: flex; flex-direction: column; gap: 10px; }
+    .api-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 15px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: monospace;
+      padding: 2px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .badge-get   { background: #dcfce7; color: #166534; }
+    .badge-patch { background: #fef9c3; color: #854d0e; }
+    .badge-post  { background: #dbeafe; color: #1e40af; }
+    .api-row .api-path { font-weight: 700; color: #1e293b; font-family: monospace; font-size: 13px; flex-shrink: 0; }
+    .api-row .api-desc { color: #64748b; font-size: 14px; }
+
+    /* ── action rows ── */
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+    .action {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+    }
+    .action-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .action-text { color: #334155; line-height: 1.5; }
+    .action-text strong { color: #0f172a; }
+
+    /* colour themes */
+    .head-green  { background: #dcfce7; color: #166534; }
+    .head-blue   { background: #dbeafe; color: #1e40af; }
+    .head-yellow { background: #fef9c3; color: #854d0e; }
+    .head-purple { background: #ede9fe; color: #4c1d95; }
+    .head-red    { background: #fee2e2; color: #991b1b; }
+
+    .note {
+      margin-top: 10px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🤖 To-Do Agent Workflow</h1>
+<p class="sub">How action items are collected, stored, and shown to you</p>
+
+<div class="flow">
+
+  <!-- 1. SOURCES -->
+  <div class="box">
+    <div class="box-head head-green">📡 &nbsp;Step 1 — Data Sources</div>
+    <div class="box-body">
+      <div class="sources-grid">
+        <div class="chip chip-jira">
+          <div class="chip-icon">🎯</div>
+          <div class="chip-name">Jira</div>
+          <div class="chip-desc">Assigned tickets &amp; comment @mentions</div>
+        </div>
+        <div class="chip chip-slack">
+          <div class="chip-icon">💬</div>
+          <div class="chip-name">Slack</div>
+          <div class="chip-desc">Channel @mentions &amp; DMs</div>
+        </div>
+        <div class="chip chip-gmail">
+          <div class="chip-icon">📧</div>
+          <div class="chip-name">Gmail</div>
+          <div class="chip-desc">Google Docs/Sheets comment notifications</div>
+        </div>
+        <div class="chip chip-drive">
+          <div class="chip-icon">📄</div>
+          <div class="chip-name">Google Drive</div>
+          <div class="chip-desc">Files where you are mentioned</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+  <!-- 2. AGENT -->
+  <div class="box">
+    <div class="box-head head-blue">🤖 &nbsp;Step 2 — /collect-todo Agent</div>
+    <div class="box-body">
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Load</strong> — reads data.json and notes all existing item IDs</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Fetch</strong> — queries all 4 sources in parallel, extracts the ask and timestamp</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>Filter</strong> — skips duplicates, resolved tickets, and bot notifications</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Prioritise</strong> — 🔴 blocking/urgent &nbsp;·&nbsp; 🟡 assigned task &nbsp;·&nbsp; 🟢 FYI</div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-text"><strong>Merge</strong> — multiple people in same Slack thread → one item</div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-text"><strong>Write</strong> — merges new items into data.json and saves ACTION_ITEMS.md</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+  <!-- 3. STORE -->
+  <div class="box">
+    <div class="box-head head-yellow">💾 &nbsp;Step 3 — data.json (Persistent Store)</div>
+    <div class="box-body">
+      <div class="kv-list">
+        <div class="kv">
+          <div class="kv-key">items[ ]</div>
+          <div class="kv-val">Active items — sorted high → medium → low</div>
+        </div>
+        <div class="kv">
+          <div class="kv-key">archivedItems[ ]</div>
+          <div class="kv-val">Completed items — newest first</div>
+        </div>
+        <div class="kv">
+          <div class="kv-key">lastSynced</div>
+          <div class="kv-val">Timestamp of the last /collect-todo run</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+  <!-- 4. APP -->
+  <div class="box">
+    <div class="box-head head-purple">🖥️ &nbsp;Step 4 — Next.js App (localhost:3000)</div>
+    <div class="box-body">
+      <div class="api-list">
+        <div class="api-row">
+          <span class="badge badge-get">GET</span>
+          <span class="api-path">/api/items</span>
+          <span class="api-desc">Reads data.json and sends it to the browser</span>
+        </div>
+        <div class="api-row">
+          <span class="badge badge-patch">PATCH</span>
+          <span class="api-path">/api/items/:id</span>
+          <span class="api-desc">Complete → archive &nbsp;|&nbsp; Restore → active (re-sorted)</span>
+        </div>
+        <div class="api-row">
+          <span class="badge badge-post">POST</span>
+          <span class="api-path">/api/refresh</span>
+          <span class="api-desc">Re-reads data.json — picks up latest sync</span>
+        </div>
+      </div>
+      <div class="note">🔄 &nbsp;Browser auto-polls GET /api/items every <strong>3 minutes</strong> in the background</div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+  <!-- 5. USER -->
+  <div class="box">
+    <div class="box-head head-red">👤 &nbsp;Step 5 — You</div>
+    <div class="box-body">
+      <div class="actions">
+        <div class="action">
+          <div class="action-icon">🖱️</div>
+          <div class="action-text"><strong>Click a card</strong> — opens the source link (Jira ticket, Slack thread, or Google Sheet)</div>
+        </div>
+        <div class="action">
+          <div class="action-icon">✅</div>
+          <div class="action-text"><strong>Tick the checkbox</strong> — marks it done and moves it to the Archive tab</div>
+        </div>
+        <div class="action">
+          <div class="action-icon">↩️</div>
+          <div class="action-text"><strong>Restore from archive</strong> — moves it back to Active, auto-sorted by priority</div>
+        </div>
+        <div class="action">
+          <div class="action-icon">🔄</div>
+          <div class="action-text"><strong>Refresh button</strong> — manually reloads data.json after running /collect-todo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
