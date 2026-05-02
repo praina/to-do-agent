@@ -250,6 +250,8 @@ data.json
 
 Each item carries: `id`, `source`, `priority`, `title`, `description`, `url`, `raisedAt`, `jiraRef`, `deadline`, `quote` (verbatim text from the source), `quoteAuthor` (who said it and where).
 
+`storage.json` is a companion file the agent manages automatically — it tracks which item IDs have already been processed so nothing is duplicated across runs. You never need to create or edit it manually; the agent creates it on the first `/collect-todo` run.
+
 ---
 
 ### Project structure

@@ -65,7 +65,7 @@ This source replaces the need to scan Drive files for comments — Gmail capture
 - `quoteAuthor`: formatted as `"[Commenter name] · [Document name] · [date e.g. Apr 17]"`
 
 ## Step 3 — Filter
-Remove any item whose ID already exists in `storage.json` seenIds.
+Read `./storage.json` if it exists. Remove any item whose ID already appears in the `seenIds` array. If `storage.json` does not exist yet, skip this step — all items are new.
 
 ## Step 4 — Reason and prioritise
 
@@ -152,7 +152,11 @@ Write this markdown file to the project root with this structure:
 ```
 
 ## Step 6 — Update storage.json
-Add all newly processed item IDs to the appropriate array in `storage.json` and update the `lastRun` timestamp. This prevents duplicates on the next run.
+Read `./storage.json` if it exists. If it does not exist, create it now with this structure:
+```json
+{ "seenIds": [], "lastRun": null }
+```
+Add all newly processed item IDs to the `seenIds` array and update `lastRun` to the current ISO timestamp. This prevents duplicates on the next run.
 
 ## Step 7 — Report back
 Tell the user:
